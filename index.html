@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Lompat Tangga - Freminet</title>
+  <style>
+    canvas { background: #87CEEB; display: block; margin: 0 auto; }
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas" width="400" height="600"></canvas>
+  <script>
+    var canvas = document.getElementById("gameCanvas");
+    var ctx = canvas.getContext("2d");
+
+    // Muat gambar karakter (letakkan Freminet-removebg-preview.png di folder yang sama!)
+    var charImg = new Image();
+    charImg.src = "Freminet-removebg-preview.png";
+
+    // Player
+    var player = {
+      x: 175,
+      y: 500,
+      width: 50,
+      height: 50,
+      vy: 0,
+      gravity: 0.5,
+      jumpStrength: -10,
+      onGround: false
+    };
+
+    // Platform/tangga: array berisi y dan x
+    var platforms = [];
+    for (var i = 0; i < 8; i++) {
+      platforms.push({
+        x: Math.random() * 320,
+        y: i * 75 + 50,
+        width: 80,
+        height: 15
+      });
+    }
+
+    var score = 0;
+
+    // Tombol kontrol
+    var keys = {};
+    document.addEventListener("keydown", function(e) { keys[e.key] = true; });
+    document.addEventListener("keyup", function(e) { keys[e.key] = false; });
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Gambar platform/tangga
+      ctx.fillStyle = "#78C878";
+      platforms.forEach(function(p) {
+        ctx.fillRect(p.x, p.y, p.width, p.height);
+      });
+
+      // Gambar player
+      ctx.drawImage(charImg, player.x, player.y, player.width, player.height);
+
+      // Score
+      ctx.font = "20px Arial";
+      ctx.fillStyle = "#222";
+      ctx.fillText("Score: " + score, 10, 30);
+    }
+
+    function update() {
+      // Kontrol kanan kiri
+      if (keys["ArrowLeft"]) player.x -= 5;
+      if (keys["ArrowRight"]) player.x += 5;
+
+      // Batas layar
+      if (player.x < 0) player.x = 0;
+      if (player.x + player.width > canvas.width) player.x = canvas.width - player.width;
+
+      // Gravity
+      player.vy += player.gravity;
+      player.y += player.vy;
+
+      // Cek collision dengan platform, lompat!
+      player.onGround = false;
+      platforms.forEach(function(p) {
+        if (player.vy > 0 &&
+            player.x + player.width > p.x &&
+            player.x < p.x + p.width &&
+            player.y + player.height > p.y &&
+            player.y + player.height < p.y + p.height + player.vy) {
+          player.vy = player.jumpStrength;
+          player.onGround = true;
+          score += 1;
+        }
+      });
+
+      // Platform naik jika player naik
+      if (player.y < 250) {
+        player.y += 5;
+        platforms.forEach(function(p) {
+          p.y += 5;
+          // Jika platform keluar dari bawah, respawn di atas
+          if (p.y > canvas.height) {
+            p.y = Math.random() * -40;
+            p.x = Math.random() * 320;
+          }
+        });
+      }
+
+      // Jika jatuh ke bawah, restart game
+      if (player.y > canvas.height) {
+        player.x = 175;
+        player.y = 500;
+        player.vy = 0;
+        score = 0;
+      }
+    }
+
+    // Loop game
+    function loop() {
+      update();
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    // Mulai setelah gambar dimuat
+    charImg.onload = function() {
+      loop();
+    };
+  </script>
+</body>
+</html>
