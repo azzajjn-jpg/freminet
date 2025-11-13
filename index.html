@@ -23,38 +23,28 @@
 <body>
     <canvas id="gameCanvas" width="400" height="600"></canvas>
     
-    <audio id="backgroundMusic" loop>
-        <source src="game_music.mp3" type="audio/mpeg">
-        Browser Anda tidak mendukung elemen audio.
-    </audio>
-    
     <script>
         var canvas = document.getElementById("gameCanvas");
         var ctx = canvas.getContext("2d");
         
-        // --- Setup Audio ---
-        var music = document.getElementById("backgroundMusic");
+        // --- EFEK SUARA MELOMPAT ---
+        // NAMA FILE SUARA SUDAH DIREVISI MENJADI game_music.mp3
+        var jumpSound = new Audio("game_music.mp3.mpeg"); 
+        jumpSound.volume = 0.7; 
 
-        // Fungsi untuk memulai musik. Dipanggil setelah interaksi user.
-        function startMusic() {
-            music.volume = 0.5; // Atur volume agar tidak terlalu keras
-            music.play().catch(error => {
-                // Tangani kasus Autoplay diblokir
-                console.log("Autoplay diblokir. Musik akan dimulai setelah interaksi pengguna.");
-            });
+        // Fungsi untuk memainkan suara melompat
+        function playJumpSound() {
+            var soundClone = jumpSound.cloneNode(true);
+            soundClone.play().catch(e => console.log("Gagal memutar suara melompat."));
         }
-        
-        // Mulai musik segera setelah interaksi pertama (misal, tombol ditekan)
-        document.addEventListener('keydown', startMusic, { once: true });
-        document.addEventListener('click', startMusic, { once: true });
 
 
         // --- Variabel Gambar ---
         var charImg = new Image();
-        charImg.src = "Freminet-removebg-preview.png"; // Ganti dengan path gambar Anda
+        charImg.src = "Freminet-removebg-preview.png"; // Karakter
         
         var bgImg = new Image();
-        // NAMA FILE BACKGROUND DIUBAH MENJADI .JPG
+        // Background: unduhan.jpg
         bgImg.src = "unduhan.jpg"; 
 
         // --- Variabel Game State dan Win Condition ---
@@ -93,7 +83,7 @@
         var keys = {};
         document.addEventListener("keydown", function(e) { 
             keys[e.key] = true; 
-            // Tambahkan kontrol untuk restart saat game over/win
+            // Kontrol untuk restart
             if ((gameState === "gameOver" || gameState === "win") && e.key === "Enter") {
                 resetGame();
             }
@@ -108,18 +98,15 @@
             score = 0;
             initializePlatforms();
             gameState = "running";
-            // Lanjutkan musik jika sebelumnya berhenti
-            startMusic();
         }
 
         // --- Fungsi Draw (Gambar) ---
         function draw() {
             // 1. Gambar Background
             if (bgImg.complete && bgImg.naturalWidth !== 0) {
-                // Gambar background jika sudah dimuat
                 ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
             } else {
-                // Fallback: Gunakan warna solid jika gambar belum atau gagal dimuat
+                // Fallback warna solid
                 ctx.fillStyle = "#87CEEB";
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
             }
@@ -161,7 +148,6 @@
                 ctx.fillStyle = "#FFFFFF";
                 ctx.fillText("Skor Akhir: " + score, canvas.width / 2, canvas.height / 2 + 20);
                 ctx.fillText("Tekan [Enter] untuk Mulai Lagi", canvas.width / 2, canvas.height / 2 + 50);
-                music.pause(); // Hentikan musik saat game over
             } else if (gameState === "win") {
                 ctx.font = "40px Arial";
                 ctx.fillStyle = "#44FF44";
@@ -171,15 +157,14 @@
                 ctx.fillStyle = "#FFFFFF";
                 ctx.fillText("Skor Anda: " + score, canvas.width / 2, canvas.height / 2 + 20);
                 ctx.fillText("Tekan [Enter] untuk Mulai Lagi", canvas.width / 2, canvas.height / 2 + 50);
-                music.pause(); // Hentikan musik saat menang
             }
-            ctx.textAlign = "left"; // Kembalikan ke default
+            ctx.textAlign = "left"; 
         }
 
 
         // --- Fungsi Update (Logika Game) ---
         function update() {
-            if (gameState !== "running") return; // Berhenti update jika game berakhir
+            if (gameState !== "running") return; 
 
             // Kontrol kanan kiri
             if (keys["ArrowLeft"]) player.x -= 5;
@@ -205,6 +190,8 @@
                     player.onGround = true;
                     score += 1;
                     
+                    playJumpSound(); // Mainkan suara melompat
+                    
                     // Cek Win Condition
                     if (score >= WIN_SCORE) {
                         gameState = "win";
@@ -212,50 +199,4 @@
                 }
             });
 
-            // Platform naik jika player naik
-            if (player.y < 250) {
-                player.y += 5;
-                platforms.forEach(function(p) {
-                    p.y += 5;
-                    // Jika platform keluar dari bawah, respawn di atas
-                    if (p.y > canvas.height) {
-                        p.y = Math.random() * -40;
-                        p.x = Math.random() * 320;
-                    }
-                });
-            }
-
-            // Jika jatuh ke bawah, Game Over
-            if (player.y > canvas.height) {
-                gameState = "gameOver";
-            }
-        }
-
-        // --- Loop Game ---
-        function loop() {
-            update();
-            draw();
-            requestAnimationFrame(loop);
-        }
-
-        // Mulai setelah semua gambar dimuat (termasuk karakter dan background)
-        var imagesLoaded = 0;
-        var totalImages = 2; // charImg dan bgImg
-
-        function imageLoaded() {
-            imagesLoaded++;
-            if (imagesLoaded === totalImages) {
-                loop();
-            }
-        }
-
-        charImg.onload = imageLoaded;
-        bgImg.onload = imageLoaded;
-        
-        // PENTING: Jika gambar gagal dimuat (misalnya, file tidak ada), pastikan game tetap berjalan
-        charImg.onerror = function() { console.error("Gagal memuat gambar karakter."); imageLoaded(); };
-        bgImg.onerror = function() { console.warn("Gagal memuat gambar background. Menggunakan warna fallback."); imageLoaded(); };
-        
-    </script>
-</body>
-</html>
+            // Platform
